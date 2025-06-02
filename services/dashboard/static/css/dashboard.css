@@ -1,0 +1,65 @@
+.status-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.status-item i {
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+.badge-status-online {
+    background-color: #28a745;
+}
+
+.badge-status-offline {
+    background-color: #dc3545;
+}
+
+.badge-status-unknown {
+    background-color: #6c757d;
+}
+
+.key-value-pair {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.key-value-pair input:first-child {
+    margin-right: 10px;
+}
+
+.key-value-pair input:last-child {
+    margin-right: 10px;
+}
+
+.key-value-pair button {
+    min-width: 40px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.labels-display, .annotations-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.labels-display .badge, .annotations-display .badge {
+    font-size: 0.8em;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.9em;
+    }
+    
+    .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}

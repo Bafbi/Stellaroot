@@ -1,0 +1,61 @@
+package templates
+
+import "fmt"
+
+templ Index(playersCount, serversCount int) {
+	@Base("Stellaroot Dashboard") {
+		<div class="space-y-6">
+			<!-- Header -->
+			<div class="text-center">
+				<h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome to Stellaroot Dashboard</h1>
+				<p class="text-xl text-gray-600">Monitor and manage your Minecraft network infrastructure</p>
+			</div>
+			
+			<!-- Stats Cards -->
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+				@StatsCard("Players", fmt.Sprintf("%d", playersCount), "fas fa-users", "bg-blue-500", "/players")
+				@StatsCard("Servers", fmt.Sprintf("%d", serversCount), "fas fa-server", "bg-green-500", "/servers")
+			</div>
+			
+			<!-- System Status -->
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<h2 class="text-2xl font-bold text-gray-900 mb-4">System Status</h2>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					@StatusItem("NATS Connected", "fas fa-database", true)
+					@StatusItem("Metadata Synced", "fas fa-sync", true)
+					@StatusItem("Permissions Active", "fas fa-shield-alt", true)
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ StatsCard(title, count, icon, bgColor, link string) {
+	<div class={ "text-white rounded-lg shadow-md p-6", bgColor }>
+		<div class="flex items-center justify-between">
+			<div>
+				<h3 class="text-lg font-semibold mb-2">{ title }</h3>
+				<p class="text-3xl font-bold">{ count }</p>
+			</div>
+			<div class="text-4xl opacity-80">
+				<i class={ icon }></i>
+			</div>
+		</div>
+		<div class="mt-4">
+			<a href={ templ.URL(link) } class="inline-block bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded transition-colors">
+				View { title }
+			</a>
+		</div>
+	</div>
+}
+
+templ StatusItem(label, icon string, healthy bool) {
+	<div class="flex items-center space-x-3">
+		if healthy {
+			<i class={ "text-green-500 text-xl", icon }></i>
+		} else {
+			<i class={ "text-red-500 text-xl", icon }></i>
+		}
+		<span class="text-gray-700">{ label }</span>
+	</div>
+}

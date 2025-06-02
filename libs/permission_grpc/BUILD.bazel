@@ -1,0 +1,27 @@
+load("@protobuf//bazel:proto_library.bzl", "proto_library")
+load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//proto:def.bzl", "go_proto_library")
+
+proto_library(
+    name = "permission_proto",
+    srcs = ["permission.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@protobuf//:empty_proto",
+    ],
+)
+
+go_proto_library(
+    name = "pb_go_proto",
+    compilers = ["@rules_go//proto:go_grpc"],
+    importpath = "github.com/bafbi/stellaroot/libs/permission_grpc/pb",
+    proto = ":permission_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "pb",
+    embed = [":pb_go_proto"],
+    importpath = "github.com/bafbi/stellaroot/libs/permission_grpc/pb",
+    visibility = ["//visibility:public"],
+)

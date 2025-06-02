@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package schema;
+
+
+// Annotation values
+message PlayerListAnnotation {
+  repeated string player_ids = 1;
+}
+
+message ServerStatusAnnotation {
+  enum Status {
+    UNKNOWN = 0;
+    ONLINE = 1;
+    OFFLINE = 2;
+    MAINTENANCE = 3;
+  }
+  Status status = 1;
+  string last_ping_time = 2; // ISO 8601 string
+}
+
+message PlayerNameAnnotation {
+  string player_name = 1;
+}
+
+// NATS Message Payloads
+message PlayerLocationUpdate {
+  string current_server_name = 1;
+  double x_coord = 2;
+  double y_coord = 3;
+}
+
+message ServerLifecycleEvent {
+  string server_name = 1;
+  enum EventType {
+    SERVER_STARTED = 0;
+    SERVER_SHUTDOWN = 1;
+    SERVER_CRASHED = 2;
+  }
+  EventType event_type = 2;
+  string timestamp = 3;
+}

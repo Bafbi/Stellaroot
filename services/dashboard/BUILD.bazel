@@ -1,0 +1,63 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+go_library(
+    name = "dashboard_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bafbi/stellaroot/services/dashboard",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//libs/metadata",
+        "//libs/schema",
+        "//services/dashboard/templates",
+        "@com_github_gin_gonic_gin//:gin",
+    ],
+)
+
+go_binary(
+    name = "dashboard",
+    embed = [":dashboard_lib"],
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "dashboard_bin_tar",
+    srcs = [":dashboard"],
+    mode = "0755",
+    package_dir = "app",
+)
+
+filegroup(
+    name = "static_files",
+    srcs = glob(["static/**"]),
+    visibility = ["//visibility:private"],
+)
+
+pkg_tar(
+    name = "static_tar",
+    srcs = [":static_files"],
+    strip_prefix = "static",
+    mode = "0644",
+    package_dir = "app/static",
+)
+
+oci_image(
+    name = "dashboard_image",
+    base = "@distroless_static",  # Or another minimal base image you prefer
+    entrypoint = ["/app/dashboard"],
+    tars = [
+        ":dashboard_bin_tar",
+        ":static_tar",
+    ],
+    # Optionally, set environment variables or expose ports:
+    # env = {"PORT": "8080"},
+    # ports = ["8080"],
+    tags = ["latest", "v0.1.0"],
+    labels = {
+        "org.opencontainers.image.title": "Stellaroot Dashboard",
+        "org.opencontainers.image.version": "0.1.0",
+        "org.opencontainers.image.authors": "Bafbi bafbi3@gmail.com",
+        "org.opencontainers.image.description": "Dashboard for Stellaroot Minecraft network",
+    },
+)

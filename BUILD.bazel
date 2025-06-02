@@ -1,0 +1,4 @@
+# gazelle:prefix github.com/bafbi/stellaroot
+load("@gazelle//:def.bzl", "gazelle")
+
+gazelle(name = "gazelle")

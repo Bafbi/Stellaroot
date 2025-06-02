@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "metadata",
+    srcs = [
+        "client.go",
+        "config.go",
+        "main.go",
+        "types.go",
+    ],
+    importpath = "github.com/bafbi/stellaroot/libs/metadata",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libs/schema",
+        "@com_github_asaskevich_eventbus//:EventBus",
+        "@com_github_nats_io_nats_go//:nats_go",
+    ],
+)

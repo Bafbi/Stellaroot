@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "permission_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bafbi/stellaroot/services/permission",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_casbin_casbin_v2//:casbin",
+        "@com_github_casbin_redis_adapter_v2//:redis-adapter",
+    ],
+)
+
+go_binary(
+    name = "permission",
+    embed = [":permission_lib"],
+    visibility = ["//visibility:public"],
+)
