@@ -1,0 +1,11 @@
+discriminator: stellaroot-{{ target.name }}
+
+targets:
+  - name: local
+    context: kind-stellaroot-local
+    args:
+      cluster_type: kind
+
+args:
+  - name: cluster_type
+    # description: The type of cluster to deploy to [kind, minikube]

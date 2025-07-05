@@ -8,3 +8,7 @@
 /.ijwb/
 /.aswb/
 /.clwb/
+
+.env*
+!.env.example*
+.helm-charts/

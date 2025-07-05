@@ -1,0 +1,2 @@
+deployments:
+  - include: cert-manager
