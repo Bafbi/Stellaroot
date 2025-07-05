@@ -1,6 +1,7 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_load")
-load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar", "mutate")
+load("@tar.bzl", "mutate", "tar")
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
 
 go_library(
     name = "dashboard_lib",
@@ -21,12 +22,14 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
+# Simple tar for the binary
 tar(
     name = "dashboard_bin_tar",
     srcs = [":dashboard"],
+    # Use the new mutate API
     mutate = mutate(
         strip_prefix = package_name(),
-        prefix = "app",
+        package_dir = "app",
     ),
 )
 
@@ -36,13 +39,61 @@ filegroup(
     visibility = ["//visibility:private"],
 )
 
+# Simple tar for static files
 tar(
     name = "static_tar",
     srcs = [":static_files"],
+    # Use the new mutate API
     mutate = mutate(
         strip_prefix = package_name(),
-        prefix = "app",
+        package_dir = "app",
     ),
+)
+
+# Generate labels file with proper stamp handling using expand_template
+expand_template(
+    name = "dashboard_labels",
+    out = "dashboard_labels.txt",
+    stamp_substitutions = {
+        "0.0.0": "{{STABLE_VERSION_TAG}}",
+        "unknown": "{{STABLE_GIT_COMMIT}}",
+        "1970-01-01T00:00:00Z": "{{BUILD_TIMESTAMP_RFC3339}}",
+        "dev": "{{STABLE_RELEASE_MODE}}",
+        "main": "{{STABLE_GIT_BRANCH}}",
+    },
+    template = [
+        "org.opencontainers.image.title=Stellaroot Dashboard",
+        "org.opencontainers.image.version=0.0.0",
+        "org.opencontainers.image.revision=unknown",
+        "org.opencontainers.image.authors=Bafbi bafbi3@gmail.com",
+        "org.opencontainers.image.description=Dashboard for Stellaroot Minecraft network",
+        "org.opencontainers.image.source=https://github.com/Bafbi/Stellaroot",
+        "org.opencontainers.image.created=1970-01-01T00:00:00Z",
+        "stellaroot.build.mode=dev",
+        "stellaroot.git.branch=main",
+    ],
+)
+
+# Generate tags file with proper stamp handling using expand_template
+expand_template(
+    name = "dashboard_tags",
+    out = "dashboard_tags.txt",
+    stamp_substitutions = {"0.0.0": "{{STABLE_VERSION_TAG}}"},
+    template = [
+        "0.0.0",
+        "latest",
+    ],
+)
+
+# Generate repo_tags file for oci_load with full repository
+expand_template(
+    name = "dashboard_repo_tags",
+    out = "dashboard_repo_tags.txt",
+    stamp_substitutions = {"0.0.0": "{{STABLE_VERSION_TAG}}"},
+    template = [
+        "stellaroot/dashboard:0.0.0",
+        "stellaroot/dashboard:latest",
+    ],
 )
 
 oci_image(
@@ -54,28 +105,15 @@ oci_image(
         ":dashboard_bin_tar",
         ":static_tar",
     ],
-    labels = {
-        "org.opencontainers.image.title": "Stellaroot Dashboard",
-        "org.opencontainers.image.version": "{STABLE_VERSION_TAG}",
-        "org.opencontainers.image.revision": "{STABLE_GIT_COMMIT}",
-        "org.opencontainers.image.authors": "Bafbi bafbi3@gmail.com",
-        "org.opencontainers.image.description": "Dashboard for Stellaroot Minecraft network",
-        "org.opencontainers.image.source": "https://github.com/Bafbi/Stellaroot",
-        "org.opencontainers.image.created": "{BUILD_TIMESTAMP_RFC3339}",
-        "stellaroot.build.mode": "{STABLE_RELEASE_MODE}",
-        "stellaroot.git.branch": "{STABLE_GIT_BRANCH}"
-    },
+    labels = ":dashboard_labels",
 )
 
 # Rule to push the OCI image to GitHub Container Registry
 oci_push(
     name = "push_dashboard_to_ghcr",
     image = ":dashboard_image",
-
     repository = "ghcr.io/bafbi/stellaroot/dashboard",
-
-    remote_tags = ["{STABLE_VERSION_TAG}"],
-
+    remote_tags = ":dashboard_tags",
     visibility = ["//visibility:public"], # This is for the Bazel target visibility
 )
 
@@ -84,7 +122,61 @@ oci_load(
     image = ":dashboard_image",
     # This will load the image into your local Docker daemon.
     # Useful for testing locally before pushing to a remote registry.
-    repo_tags = [
-        "stellaroot/dashboard:{STABLE_VERSION_TAG}",
-    ],
+    repo_tags = ":dashboard_repo_tags",
+)
+
+# Bazel target to load the dashboard image into Kind cluster for local development
+# Run with: bazel run //services/dashboard:load_dashboard_to_kind
+genrule(
+    name = "load_dashboard_to_kind_script",
+    outs = ["load_to_kind.sh"],
+    cmd = """
+cat > $@ << 'EOF'
+#!/bin/bash
+set -euo pipefail
+
+CLUSTER_NAME="stellaroot-local"
+echo "Loading dashboard image to Kind cluster..."
+
+# Check if Kind cluster exists
+if ! kind get clusters | grep -q "^$${CLUSTER_NAME}$$"; then
+    echo "Error: Kind cluster '$${CLUSTER_NAME}' not found."
+    echo "Please create the cluster first with:"
+    echo "  kind create cluster --name $${CLUSTER_NAME} --config kubernetes/kind-config.yaml"
+    exit 1
+fi
+
+# Build and load the image to local Docker daemon
+echo "Building and loading dashboard image to local Docker..."
+bazel run //services/dashboard:load_dashboard_image
+
+# Get version tag
+VERSION_TAG=$$(bazel run //tools:bazel_stamp_vars.sh 2>/dev/null | grep STABLE_VERSION_TAG | cut -d' ' -f2 || echo "dev-$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)")
+
+IMAGE_NAME="stellaroot/dashboard:$${VERSION_TAG}"
+echo "Loading image $${IMAGE_NAME} to Kind cluster $${CLUSTER_NAME}..."
+
+# Load the image into Kind
+if kind load docker-image "$${IMAGE_NAME}" --name "$${CLUSTER_NAME}"; then
+    echo "✅ Successfully loaded $${IMAGE_NAME} to Kind cluster $${CLUSTER_NAME}"
+else
+    echo "❌ Failed to load image to Kind cluster"
+    exit 1
+fi
+EOF
+chmod +x $@
+    """,
+    executable = True,
+    visibility = ["//visibility:public"],
+    stamp = 1,
+)
+
+# Wrapper to make the script runnable with bazel run
+genrule(
+    name = "load_dashboard_to_kind",
+    srcs = [":load_dashboard_to_kind_script"],
+    outs = ["run_load_to_kind.sh"],
+    cmd = "cp $< $@ && chmod +x $@",
+    executable = True,
+    visibility = ["//visibility:public"],
 )

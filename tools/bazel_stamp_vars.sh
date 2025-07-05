@@ -36,19 +36,20 @@ if [ "$RELEASE_MODE" = "true" ]; then
     MODULE_VERSION=$(grep -E '^\s*version\s*=' MODULE.bazel | sed -E 's/.*version\s*=\s*"([^"]+)".*/\1/' || echo "0.1.0")
     VERSION_TAG="v${MODULE_VERSION}"
   fi
-  
+
   # In release mode, ensure we're on a clean tree
   if [ "$GIT_COMMIT_SUFFIX" = "-dirty" ]; then
     echo "ERROR: Cannot build release with dirty working tree" >&2
     exit 1
   fi
 else
-  # Development mode: always use dev tag with commit
-  if [ "$GIT_COMMIT" != "unknown" ]; then
-    VERSION_TAG="dev-${GIT_COMMIT}${GIT_COMMIT_SUFFIX}"
-  else
-    VERSION_TAG="dev-local"
-  fi
+  # # Development mode: always use dev tag with commit
+  # if [ "$GIT_COMMIT" != "unknown" ]; then
+  #   VERSION_TAG="dev-${GIT_COMMIT}${GIT_COMMIT_SUFFIX}"
+  # else
+  #   VERSION_TAG="dev-local"
+  # fi
+  VERSION_TAG="dev"
 fi
 
 echo "STABLE_VERSION_TAG ${VERSION_TAG}"
