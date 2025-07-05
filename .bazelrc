@@ -1,0 +1,24 @@
+# .bazelrc
+build --stamp
+build --workspace_status_command=./tools/bazel_stamp_vars.sh
+
+# Default build options
+build --show_timestamps
+build --color=yes
+
+# Development mode config (default)
+build:dev --stamp
+build:dev --workspace_status_command=./tools/bazel_stamp_vars.sh
+
+# Release mode config
+build:release --stamp
+build:release --workspace_status_command=./tools/bazel_stamp_vars.sh
+build:release --define=RELEASE_MODE=true
+
+# CI/CD friendly options
+build:ci --color=no
+build:ci --show_progress_rate_limit=5
+build:ci --curses=no
+
+# Try to use local configuration if available
+try-import %workspace%/.bazelrc.local
