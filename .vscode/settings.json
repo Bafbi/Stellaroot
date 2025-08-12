@@ -38,4 +38,8 @@
   "go.buildOnSave": "off",
   "go.lintOnSave": "off",
   "go.vetOnSave": "off",
+    "files.associations": {
+        // For kluctl templates
+        "*.yml": "jinja-yaml"
+    },
 }

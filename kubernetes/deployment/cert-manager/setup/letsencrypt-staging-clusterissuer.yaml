@@ -7,7 +7,7 @@ spec:
     # You must replace this email address with your own.
     # Let's Encrypt will use this to contact you about expiring
     # certificates, and issues related to your account.
-    email: nathan.eudeline@tndigit.it
+    email: bafbi3@gmail.com
     # If the ACME server supports profiles, you can specify the profile name here.
     # See https://letsencrypt.org/docs/profiles/
     # profile: tlsserver

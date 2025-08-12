@@ -1,0 +1,12 @@
+cert_manager:
+  namespace: cert-manager
+  issuers:
+    selfsigned: 
+      enabled: true
+    letsencrypt:
+      enabled: true
+      email: user@example.com
+      server: https://acme-v02.api.letsencrypt.org/directory
+
+kgateway:
+  namespace: gateway-system

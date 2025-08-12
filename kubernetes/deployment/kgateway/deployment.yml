@@ -1,0 +1,11 @@
+deployments:
+  - path: namespace
+    waitReadiness: true
+  - path: crds
+  - barrier: true
+  - path: chart
+    waitReadiness: true
+  # - barrier: true
+  # - path: setup
+
+overrideNamespace: {{ kgateway.namespace }}

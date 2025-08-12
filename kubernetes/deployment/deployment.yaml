@@ -1,2 +1,8 @@
+vars:
+  - file: configs/common.yaml
+  - file: configs/{{ target.name }}.yaml 
+
+
 deployments:
+  - include: kgateway
   - include: cert-manager
