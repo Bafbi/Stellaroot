@@ -1,0 +1,9 @@
+deployments:
+  - path: namespace
+  - barrier: true
+  - path: chart
+    waitReadiness: true
+  - barrier: true
+  - path: setup
+
+overrideNamespace: {{ cert_manager.namespace }}
