@@ -5,7 +5,7 @@ deployments:
   - barrier: true
   - path: chart
     waitReadiness: true
-  # - barrier: true
-  # - path: setup
+  - barrier: true
+  - path: setup
 
 overrideNamespace: {{ kgateway.namespace }}
