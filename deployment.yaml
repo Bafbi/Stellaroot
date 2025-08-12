@@ -1,2 +1,2 @@
 deployments:
-  - include: kubernetes
+  - include: kubernetes/deployment
