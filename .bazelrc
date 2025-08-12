@@ -1,19 +1,30 @@
 # .bazelrc
-build --stamp
+
+# Use workspace status command for stamped builds (harmless for nostamp)
 build --workspace_status_command=./tools/bazel_stamp_vars.sh
 
 # Default build options
 build --show_timestamps
 build --color=yes
 
-# Development mode config (default)
-build:dev --stamp
-build:dev --workspace_status_command=./tools/bazel_stamp_vars.sh
+# Default/dev: fast, cache-friendly, and nostamp
+build --compilation_mode=fastbuild
+build --nostamp
+run --nostamp
+test --nostamp
 
-# Release mode config
+# Dev config alias (explicit)
+build:dev --compilation_mode=fastbuild
+build:dev --nostamp
+run:dev --nostamp
+test:dev --nostamp
+
+# Release mode: stamp and enable release flag for script
+build:release --compilation_mode=opt
 build:release --stamp
-build:release --workspace_status_command=./tools/bazel_stamp_vars.sh
 build:release --define=RELEASE_MODE=true
+run:release --stamp
+test:release --stamp
 
 # CI/CD friendly options
 build:ci --color=no

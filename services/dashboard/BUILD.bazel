@@ -81,6 +81,11 @@ expand_template(
         "1970-01-01T00:00:00Z": "{{BUILD_TIMESTAMP_RFC3339}}",
         "dev": "{{STABLE_RELEASE_MODE}}",
         "main": "{{STABLE_GIT_BRANCH}}",
+    "__VCS__": "{{STABLE_VCS}}",
+    "__GIT_TAG__": "{{STABLE_GIT_TAG}}",
+    "__GIT_DIRTY__": "{{STABLE_GIT_DIRTY}}",
+    "__JJ_BOOKMARKS__": "{{STABLE_JJ_BOOKMARKS}}",
+    "__IMAGE_VERSION__": "{{STABLE_IMAGE_VERSION}}",
     },
     template = [
         "org.opencontainers.image.title=Stellaroot Dashboard",
@@ -92,6 +97,11 @@ expand_template(
         "org.opencontainers.image.created=1970-01-01T00:00:00Z",
         "stellaroot.build.mode=dev",
         "stellaroot.git.branch=main",
+    "stellaroot.vcs=__VCS__",
+    "stellaroot.git.tag=__GIT_TAG__",
+    "stellaroot.git.dirty=__GIT_DIRTY__",
+    "stellaroot.jj.bookmarks=__JJ_BOOKMARKS__",
+    "stellaroot.image.version=__IMAGE_VERSION__",
     ],
 )
 
@@ -170,10 +180,18 @@ fi
 
 # Build and load the image to local Docker daemon
 echo "Building and loading dashboard image to local Docker..."
-bazel run //services/dashboard:load_image
+bazel run //services/dashboard:load
 
 # Get version tag
-VERSION_TAG=$$(bazel run //tools:bazel_stamp_vars.sh 2>/dev/null | grep STABLE_VERSION_TAG | cut -d' ' -f2 || echo "dev-$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)")
+# VERSION_TAG=$$(bazel run //tools:bazel_stamp_vars.sh 2>/dev/null | awk '/^STABLE_VERSION_TAG /{print $$2}' || true)
+# if [ -z "$$VERSION_TAG" ]; then
+#     if command -v jj >/dev/null 2>&1; then
+#         VERSION_TAG="dev-$$(jj log -r @ -n 1 --no-graph -T 'commit_id.short()' 2>/dev/null || echo local)"
+#     else
+#         VERSION_TAG="dev-$$(git rev-parse --short HEAD 2>/dev/null || echo local)"
+#     fi
+# fi
+VERSION_TAG=latest
 
 IMAGE_NAME="stellaroot/dashboard:$${VERSION_TAG}"
 echo "Loading image $${IMAGE_NAME} to Kind cluster $${CLUSTER_NAME}..."
