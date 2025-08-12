@@ -1,10 +1,11 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_load")
-load("@tar.bzl", "mutate", "tar")
+load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
 
 go_library(
-    name = "dashboard_lib",
+    name = "lib",
     srcs = ["main.go"],
     importpath = "github.com/bafbi/stellaroot/services/dashboard",
     visibility = ["//visibility:private"],
@@ -18,19 +19,29 @@ go_library(
 
 go_binary(
     name = "dashboard",
-    embed = [":dashboard_lib"],
+    embed = [":lib"],
     visibility = ["//visibility:public"],
+)
+
+# Mtree spec for the binary
+mtree_spec(
+    name = "bin_spec",
+    srcs = [":dashboard"],
+)
+
+# Mtree mutation for the binary
+mtree_mutate(
+    name = "bin_mtree",
+    mtree = ":bin_spec",
+    strip_prefix = package_name(),
+    package_dir = "app",
 )
 
 # Simple tar for the binary
 tar(
-    name = "dashboard_bin_tar",
+    name = "bin_tar",
     srcs = [":dashboard"],
-    # Use the new mutate API
-    mutate = mutate(
-        strip_prefix = package_name(),
-        package_dir = "app",
-    ),
+    mtree = ":bin_mtree",
 )
 
 filegroup(
@@ -39,21 +50,31 @@ filegroup(
     visibility = ["//visibility:private"],
 )
 
+# Mtree spec for static files
+mtree_spec(
+    name = "static_spec",
+    srcs = [":static_files"],
+)
+
+# Mtree mutation for static files
+mtree_mutate(
+    name = "static_mtree",
+    mtree = ":static_spec",
+    strip_prefix = package_name(),
+    package_dir = "app",
+)
+
 # Simple tar for static files
 tar(
     name = "static_tar",
     srcs = [":static_files"],
-    # Use the new mutate API
-    mutate = mutate(
-        strip_prefix = package_name(),
-        package_dir = "app",
-    ),
+    mtree = ":static_mtree",
 )
 
 # Generate labels file with proper stamp handling using expand_template
 expand_template(
-    name = "dashboard_labels",
-    out = "dashboard_labels.txt",
+    name = "labels",
+    out = "labels.txt",
     stamp_substitutions = {
         "0.0.0": "{{STABLE_VERSION_TAG}}",
         "unknown": "{{STABLE_GIT_COMMIT}}",
@@ -76,8 +97,8 @@ expand_template(
 
 # Generate tags file with proper stamp handling using expand_template
 expand_template(
-    name = "dashboard_tags",
-    out = "dashboard_tags.txt",
+    name = "tags",
+    out = "tags.txt",
     stamp_substitutions = {"0.0.0": "{{STABLE_VERSION_TAG}}"},
     template = [
         "0.0.0",
@@ -87,8 +108,8 @@ expand_template(
 
 # Generate repo_tags file for oci_load with full repository
 expand_template(
-    name = "dashboard_repo_tags",
-    out = "dashboard_repo_tags.txt",
+    name = "repo_tags",
+    out = "repo_tags.txt",
     stamp_substitutions = {"0.0.0": "{{STABLE_VERSION_TAG}}"},
     template = [
         "stellaroot/dashboard:0.0.0",
@@ -97,38 +118,39 @@ expand_template(
 )
 
 oci_image(
-    name = "dashboard_image",
+    name = "image",
     base = "@distroless_base",
-    entrypoint = ["/app/dashboard"],
+    entrypoint = ["/dashboard"],
     workdir = "/app",
     tars = [
-        ":dashboard_bin_tar",
+        ":bin_tar",
         ":static_tar",
     ],
-    labels = ":dashboard_labels",
+    labels = ":labels",
 )
 
 # Rule to push the OCI image to GitHub Container Registry
 oci_push(
-    name = "push_dashboard_to_ghcr",
-    image = ":dashboard_image",
+    name = "push_to_ghcr",
+    image = ":image",
     repository = "ghcr.io/bafbi/stellaroot/dashboard",
-    remote_tags = ":dashboard_tags",
+    remote_tags = ":tags",
     visibility = ["//visibility:public"], # This is for the Bazel target visibility
 )
 
 oci_load(
-    name = "load_dashboard_image",
-    image = ":dashboard_image",
+    name = "load",
+    image = ":image",
     # This will load the image into your local Docker daemon.
     # Useful for testing locally before pushing to a remote registry.
-    repo_tags = ":dashboard_repo_tags",
+    repo_tags = ":repo_tags",
 )
 
 # Bazel target to load the dashboard image into Kind cluster for local development
-# Run with: bazel run //services/dashboard:load_dashboard_to_kind
+# Run with: bazel run //services/dashboard:load_to_kind
 genrule(
-    name = "load_dashboard_to_kind_script",
+    name = "load_to_kind_script",
+#     srcs = [":load"],
     outs = ["load_to_kind.sh"],
     cmd = """
 cat > $@ << 'EOF'
@@ -148,7 +170,7 @@ fi
 
 # Build and load the image to local Docker daemon
 echo "Building and loading dashboard image to local Docker..."
-bazel run //services/dashboard:load_dashboard_image
+bazel run //services/dashboard:load_image
 
 # Get version tag
 VERSION_TAG=$$(bazel run //tools:bazel_stamp_vars.sh 2>/dev/null | grep STABLE_VERSION_TAG | cut -d' ' -f2 || echo "dev-$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)")
@@ -173,8 +195,8 @@ chmod +x $@
 
 # Wrapper to make the script runnable with bazel run
 genrule(
-    name = "load_dashboard_to_kind",
-    srcs = [":load_dashboard_to_kind_script"],
+    name = "load_to_kind",
+    srcs = [":load_to_kind_script"],
     outs = ["run_load_to_kind.sh"],
     cmd = "cp $< $@ && chmod +x $@",
     executable = True,
