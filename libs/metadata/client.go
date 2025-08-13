@@ -11,10 +11,9 @@ import (
 	"github.com/asaskevich/EventBus"
 	"github.com/nats-io/nats.go"
 
-	"github.com/bafbi/stellaroot/libs/schema"
+	"github.com/bafbi/stellaroot/libs/constant"
 )
 
-// ChangeType represents the type of metadata change.
 type ChangeType int
 
 const (
@@ -101,7 +100,7 @@ func NewClient(parentCtx context.Context, config *Config, logger *slog.Logger) (
 	if err != nil && err != nats.ErrNoKeysFound {
 		cancel()
 		return nil, fmt.Errorf("failed to list player keys: %w", err)
-	} 
+	}
 	for _, uuid := range entries {
 		val, err := client.playersKV.Get(uuid)
 		if err != nil || val == nil {
@@ -114,7 +113,7 @@ func NewClient(parentCtx context.Context, config *Config, logger *slog.Logger) (
 		client.playersMu.Lock()
 		client.playersCache[uuid] = &player
 		if player.Annotations != nil {
-			if name, ok := player.Annotations[schema.S(schema.PlayerAnnotationKeyName)]; ok && name != "" {
+			if name, ok := player.Annotations[string(constant.PlayerName)]; ok && name != "" {
 				client.playersNameToUUID[name] = uuid
 			}
 		}
@@ -269,7 +268,7 @@ func (c *Client) watchPlayers() {
 					var oldName string
 					c.playersMu.RLock()
 					if oldPlayer, exists := c.playersCache[uuid]; exists && oldPlayer.Annotations != nil {
-						oldName, _ = oldPlayer.Annotations[schema.S(schema.PlayerAnnotationKeyName)]
+						oldName, _ = oldPlayer.Annotations[string(constant.PlayerName)]
 						oldValue = oldPlayer
 					}
 					c.playersMu.RUnlock()
@@ -302,12 +301,12 @@ func (c *Client) watchPlayers() {
 				var oldName, newName string
 				c.playersMu.RLock()
 				if oldPlayer, exists := c.playersCache[uuid]; exists && oldPlayer.Annotations != nil {
-					oldName, _ = oldPlayer.Annotations[schema.S(schema.PlayerAnnotationKeyName)]
+					oldName, _ = oldPlayer.Annotations[string(constant.PlayerName)]
 					oldValue = oldPlayer
 				}
 				c.playersMu.RUnlock()
 				if player.Annotations != nil {
-					newName, _ = player.Annotations[schema.S(schema.PlayerAnnotationKeyName)]
+					newName, _ = player.Annotations[string(constant.PlayerName)]
 				}
 
 				c.playersMu.Lock()
