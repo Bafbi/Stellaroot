@@ -1,0 +1,8 @@
+deployments:
+  - path: namespace
+    waitReadiness: true
+  - barrier: true
+  - path: chart
+    waitReadiness: true
+
+overrideNamespace: {{ nats.namespace }}

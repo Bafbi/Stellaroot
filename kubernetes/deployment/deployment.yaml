@@ -6,3 +6,6 @@ vars:
 deployments:
   - include: kgateway
   - include: cert-manager
+  - barrier: true
+  - include: nats
+  - barrier: true

@@ -10,3 +10,7 @@ cert_manager:
 
 kgateway:
   namespace: gateway-system
+
+nats:
+  namespace: nats
+

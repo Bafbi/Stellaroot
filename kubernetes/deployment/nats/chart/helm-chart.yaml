@@ -1,0 +1,5 @@
+helmChart:
+  repo: oci://registry-1.docker.io/bitnamicharts/nats
+  chartVersion: 9.0.17
+  releaseName: nats
+  namespace: "{{ namespace }}"
