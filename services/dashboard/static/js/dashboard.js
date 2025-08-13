@@ -86,9 +86,9 @@ function playersData() {
                 if (key.trim()) annotations[key.trim()] = value;
             });
             
-            // Add player name to annotations
+            // Add player name to annotations (backend expects key "player/name")
             if (this.editingPlayer.name) {
-                annotations['player_name'] = this.editingPlayer.name;
+                annotations['player/name'] = this.editingPlayer.name;
             }
             
             try {

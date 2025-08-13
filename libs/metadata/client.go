@@ -98,10 +98,10 @@ func NewClient(parentCtx context.Context, config *Config, logger *slog.Logger) (
 
 	// --- Initial cache warm-up for players ---
 	entries, err := client.playersKV.Keys()
-	if err != nil {
+	if err != nil && err != nats.ErrNoKeysFound {
 		cancel()
 		return nil, fmt.Errorf("failed to list player keys: %w", err)
-	}
+	} 
 	for _, uuid := range entries {
 		val, err := client.playersKV.Get(uuid)
 		if err != nil || val == nil {
@@ -114,7 +114,7 @@ func NewClient(parentCtx context.Context, config *Config, logger *slog.Logger) (
 		client.playersMu.Lock()
 		client.playersCache[uuid] = &player
 		if player.Annotations != nil {
-			if name, ok := player.Annotations["player_name"]; ok && name != "" {
+			if name, ok := player.Annotations[schema.S(schema.PlayerAnnotationKeyName)]; ok && name != "" {
 				client.playersNameToUUID[name] = uuid
 			}
 		}
@@ -123,7 +123,7 @@ func NewClient(parentCtx context.Context, config *Config, logger *slog.Logger) (
 
 	// --- Initial cache warm-up for servers ---
 	serverKeys, err := client.serversKV.Keys()
-	if err != nil {
+	if err != nil && err != nats.ErrNoKeysFound {
 		cancel()
 		return nil, fmt.Errorf("failed to list server keys: %w", err)
 	}

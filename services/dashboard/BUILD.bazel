@@ -130,7 +130,7 @@ expand_template(
 oci_image(
     name = "image",
     base = "@distroless_base",
-    entrypoint = ["/dashboard"],
+    entrypoint = ["/app/dashboard_/dashboard"],
     workdir = "/app",
     tars = [
         ":bin_tar",

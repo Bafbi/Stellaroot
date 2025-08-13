@@ -21,21 +21,9 @@ type DashboardServer struct {
 	router         *gin.Engine
 }
 
-type PlayerViewModel struct {
-	UUID        string            `json:"uuid"`
-	Name        string            `json:"name"`
-	Labels      map[string]string `json:"labels"`
-	Annotations map[string]string `json:"annotations"`
-	Status      string            `json:"status"`
-}
-
-type ServerViewModel struct {
-	Name        string            `json:"name"`
-	Labels      map[string]string `json:"labels"`
-	Annotations map[string]string `json:"annotations"`
-	Status      string            `json:"status"`
-	PlayerCount int               `json:"player_count"`
-}
+// Use view models defined in the templates package for both JSON and fragments
+type PlayerViewModel = templates.PlayerViewModel
+type ServerViewModel = templates.ServerViewModel
 
 func NewDashboardServer(metadataClient *metadata.Client, logger *slog.Logger) *DashboardServer {
 	ds := &DashboardServer{
@@ -56,7 +44,9 @@ func (ds *DashboardServer) setupRouter() {
 	// Routes using Templ
 	ds.router.GET("/", ds.handleHome)
 	ds.router.GET("/players", ds.handlePlayersPage)
+	ds.router.GET("/players/fragment", ds.handlePlayersFragment)
 	ds.router.GET("/servers", ds.handleServersPage)
+	ds.router.GET("/servers/fragment", ds.handleServersFragment)
 
 	// API routes
 	api := ds.router.Group("/api")
@@ -81,9 +71,64 @@ func (ds *DashboardServer) handlePlayersPage(c *gin.Context) {
 	component.Render(c.Request.Context(), c.Writer)
 }
 
+func (ds *DashboardServer) handlePlayersFragment(c *gin.Context) {
+	// Build view models from current cache
+	players := ds.metadataClient.GetPlayersByLabels(map[string]string{})
+	var viewModels []PlayerViewModel
+	for uuid, player := range players {
+		name := "Unknown"
+		if player.Annotations != nil {
+			if playerName, ok := player.Annotations[schema.S(schema.PlayerAnnotationKeyName)]; ok {
+				name = playerName
+			}
+		}
+		status := "Offline"
+		if player.Annotations != nil {
+			if online, ok := player.Annotations["online"]; ok && online == "true" {
+				status = "Online"
+			}
+		}
+		viewModels = append(viewModels, PlayerViewModel{
+			UUID:        uuid,
+			Name:        name,
+			Labels:      player.Labels,
+			Annotations: player.Annotations,
+			Status:      status,
+		})
+	}
+	templates.PlayersFragment(viewModels).Render(c.Request.Context(), c.Writer)
+}
+
 func (ds *DashboardServer) handleServersPage(c *gin.Context) {
 	component := templates.Servers()
 	component.Render(c.Request.Context(), c.Writer)
+}
+
+func (ds *DashboardServer) handleServersFragment(c *gin.Context) {
+	servers := ds.metadataClient.GetAllServers()
+	var viewModels []ServerViewModel
+	for name, server := range servers {
+		status := "Unknown"
+		playerCount := 0
+		if server.Annotations != nil {
+			if serverStatus, ok := server.Annotations["status"]; ok {
+				status = serverStatus
+			}
+			if playerCountStr, ok := server.Annotations["current_players"]; ok {
+				if count, err := strconv.Atoi(playerCountStr); err == nil {
+					playerCount = count
+				}
+			}
+		}
+		viewModels = append(viewModels, ServerViewModel{
+			Name:        name,
+			Labels:      server.Labels,
+			Annotations: server.Annotations,
+			Status:      status,
+			PlayerCount: playerCount,
+		})
+	}
+	templates.ServersFragment(viewModels).Render(c.Request.Context(), c.Writer)
 }
 
 func (ds *DashboardServer) handlePlayersAPI(c *gin.Context) {
