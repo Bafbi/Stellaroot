@@ -1,3 +1,5 @@
 images:
   - image: stellaroot/dashboard
     resultImage: docker.io/stellaroot/dashboard:latest
+  - image: stellaroot/fakedata
+    resultImage: docker.io/stellaroot/fakedata:latest

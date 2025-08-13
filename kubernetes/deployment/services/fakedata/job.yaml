@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fakedata-seed
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: fakedata
+          image: "{{ images.get_image('stellaroot/fakedata') }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NATS_URL
+              value: "nats://nats.nats.svc:4222"
+            - name: NATS_USER
+              value: ""
+            - name: NATS_PASSWORD
+              value: ""
+            - name: NATS_TOKEN
+              value: ""
+            - name: PLAYERS_BUCKET
+              value: "players"
+            - name: SERVERS_BUCKET
+              value: "servers"
+            # Optional overrides for generator behavior
+            # - name: FAKER_PLAYERS
+            #   value: "25"
+            # - name: FAKER_SERVERS
+            #   value: "5"
+            # - name: FAKER_PREFIX
+            #   value: "local"
+            # - name: FAKER_UPDATES
+            #   value: "false"
+            # - name: FAKER_INTERVAL
+            #   value: "5s"
+          args:
+            - "-updates=false"

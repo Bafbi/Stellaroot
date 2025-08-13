@@ -17,3 +17,5 @@ nats:
 services:
   dashboard:
     namespace: stellaroot
+  fakedata:
+    namespace: stellaroot

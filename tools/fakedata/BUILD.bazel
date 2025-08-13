@@ -1,0 +1,159 @@
+load("@rules_go//go:def.bzl", "go_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_load")
+load("@tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+
+go_binary(
+    name = "fakedata",
+    srcs = ["main.go"],
+    importpath = "github.com/bafbi/stellaroot/tools/fakedata",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//libs/metadata",
+        "//libs/schema",
+    ],
+)
+
+# Mtree spec for the binary
+mtree_spec(
+    name = "bin_spec",
+    srcs = [":fakedata"],
+)
+
+# Mtree mutation for the binary
+mtree_mutate(
+    name = "bin_mtree",
+    mtree = ":bin_spec",
+    strip_prefix = package_name(),
+    package_dir = "app",
+)
+
+# Simple tar for the binary
+tar(
+    name = "bin_tar",
+    srcs = [":fakedata"],
+    mtree = ":bin_mtree",
+)
+
+# Labels for image metadata
+expand_template(
+    name = "labels",
+    out = "labels.txt",
+    stamp_substitutions = {
+        "0.0.0": "{{STABLE_VERSION_TAG}}",
+        "unknown": "{{STABLE_GIT_COMMIT}}",
+        "1970-01-01T00:00:00Z": "{{BUILD_TIMESTAMP_RFC3339}}",
+        "dev": "{{STABLE_RELEASE_MODE}}",
+        "main": "{{STABLE_GIT_BRANCH}}",
+        "__VCS__": "{{STABLE_VCS}}",
+        "__GIT_TAG__": "{{STABLE_GIT_TAG}}",
+        "__GIT_DIRTY__": "{{STABLE_GIT_DIRTY}}",
+        "__JJ_BOOKMARKS__": "{{STABLE_JJ_BOOKMARKS}}",
+        "__IMAGE_VERSION__": "{{STABLE_IMAGE_VERSION}}",
+    },
+    template = [
+        "org.opencontainers.image.title=Stellaroot Fakedata",
+        "org.opencontainers.image.version=0.0.0",
+        "org.opencontainers.image.revision=unknown",
+        "org.opencontainers.image.authors=Bafbi bafbi3@gmail.com",
+        "org.opencontainers.image.description=Fake data generator for Stellaroot",
+        "org.opencontainers.image.source=https://github.com/Bafbi/Stellaroot",
+        "org.opencontainers.image.created=1970-01-01T00:00:00Z",
+        "stellaroot.build.mode=dev",
+        "stellaroot.git.branch=main",
+        "stellaroot.vcs=__VCS__",
+        "stellaroot.git.tag=__GIT_TAG__",
+        "stellaroot.git.dirty=__GIT_DIRTY__",
+        "stellaroot.jj.bookmarks=__JJ_BOOKMARKS__",
+        "stellaroot.image.version=__IMAGE_VERSION__",
+    ],
+)
+
+# Tags list
+expand_template(
+    name = "tags",
+    out = "tags.txt",
+    stamp_substitutions = {"0.0.0": "{{STABLE_VERSION_TAG}}"},
+    template = [
+        "0.0.0",
+        "latest",
+    ],
+)
+
+# Repo tags for local docker load
+expand_template(
+    name = "repo_tags",
+    out = "repo_tags.txt",
+    stamp_substitutions = {"0.0.0": "{{STABLE_VERSION_TAG}}"},
+    template = [
+        "stellaroot/fakedata:0.0.0",
+        "stellaroot/fakedata:latest",
+    ],
+)
+
+oci_image(
+    name = "image",
+    base = "@distroless_base",
+    entrypoint = ["/app/fakedata_/fakedata"],
+    workdir = "/app",
+    tars = [":bin_tar"],
+    labels = ":labels",
+)
+
+oci_push(
+    name = "push_to_ghcr",
+    image = ":image",
+    repository = "ghcr.io/bafbi/stellaroot/fakedata",
+    remote_tags = ":tags",
+    visibility = ["//visibility:public"],
+)
+
+oci_load(
+    name = "load",
+    image = ":image",
+    repo_tags = ":repo_tags",
+)
+
+# Convenience script to load the image to a local Kind cluster
+genrule(
+    name = "load_to_kind_script",
+    outs = ["load_to_kind.sh"],
+    cmd = """
+cat > $@ << 'EOF'
+#!/bin/bash
+set -euo pipefail
+
+CLUSTER_NAME="stellaroot-local"
+echo "Loading fakedata image to Kind cluster..."
+
+if ! kind get clusters | grep -q "^$${CLUSTER_NAME}$$"; then
+    echo "Error: Kind cluster '$${CLUSTER_NAME}' not found."
+    echo "Create it with: kind create cluster --name $${CLUSTER_NAME} --config kubernetes/kind-config.yaml"
+    exit 1
+fi
+
+# Build and load image into local Docker daemon
+bazel run //tools/fakedata:load
+
+VERSION_TAG=latest
+IMAGE_NAME="stellaroot/fakedata:$${VERSION_TAG}"
+echo "Loading image $${IMAGE_NAME} to Kind cluster $${CLUSTER_NAME}..."
+kind load docker-image "$${IMAGE_NAME}" --name "$${CLUSTER_NAME}"
+echo "✅ Loaded $${IMAGE_NAME} to Kind"
+EOF
+chmod +x $@
+    """,
+    executable = True,
+    visibility = ["//visibility:public"],
+    stamp = 1,
+)
+
+genrule(
+    name = "load_to_kind",
+    srcs = [":load_to_kind_script"],
+    outs = ["run_load_to_kind.sh"],
+    cmd = "cp $< $@ && chmod +x $@",
+    executable = True,
+    visibility = ["//visibility:public"],
+)
