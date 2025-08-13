@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library", "go_binary")
+
+go_library(
+    name = "genconstants_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bafbi/stellaroot/tools/genconstants",
+    deps = [
+        "@in_gopkg_yaml_v3//:go_default_library",  # YAML parsing
+    ],
+)
+
+go_binary(
+    name = "genconstants",
+    embed = ["genconstants_lib"],
+    visibility = ["//visibility:public"],
+)

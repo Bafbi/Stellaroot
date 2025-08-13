@@ -11,7 +11,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//libs/metadata",
-        "//libs/schema",
+        "//libs/constant",
         "//services/dashboard/templates",
         "@com_github_gin_gonic_gin//:gin",
     ],

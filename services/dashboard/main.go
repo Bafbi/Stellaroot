@@ -10,8 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/bafbi/stellaroot/libs/constant"
 	"github.com/bafbi/stellaroot/libs/metadata"
-	"github.com/bafbi/stellaroot/libs/schema"
 	"github.com/bafbi/stellaroot/services/dashboard/templates"
 )
 
@@ -78,7 +78,7 @@ func (ds *DashboardServer) handlePlayersFragment(c *gin.Context) {
 	for uuid, player := range players {
 		name := "Unknown"
 		if player.Annotations != nil {
-			if playerName, ok := player.Annotations[schema.S(schema.PlayerAnnotationKeyName)]; ok {
+			if playerName, ok := player.Annotations[string(constant.PlayerName)]; ok {
 				name = playerName
 			}
 		}
@@ -138,7 +138,7 @@ func (ds *DashboardServer) handlePlayersAPI(c *gin.Context) {
 	for uuid, player := range players {
 		name := "Unknown"
 		if player.Annotations != nil {
-			if playerName, ok := player.Annotations[schema.S(schema.PlayerAnnotationKeyName)]; ok {
+			if playerName, ok := player.Annotations[string(constant.PlayerName)]; ok {
 				name = playerName
 			}
 		}

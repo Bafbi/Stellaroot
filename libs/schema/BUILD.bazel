@@ -1,9 +1,0 @@
-load("@rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "schema",
-    srcs = ["schema.go"],
-    importpath = "github.com/bafbi/stellaroot/libs/schema",
-    visibility = ["//visibility:public"],
-    deps = ["//libs/schema/protos:schema_go_proto"],
-)

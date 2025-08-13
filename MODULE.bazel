@@ -13,7 +13,7 @@ go_sdk.from_file(go_mod = "//:go.mod")
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
-use_repo(go_deps, "com_github_a_h_templ", "com_github_asaskevich_eventbus", "com_github_casbin_casbin_v2", "com_github_casbin_redis_adapter_v2", "com_github_gin_gonic_gin", "com_github_nats_io_nats_go")
+use_repo(go_deps, "com_github_a_h_templ", "com_github_asaskevich_eventbus", "com_github_casbin_casbin_v2", "com_github_casbin_redis_adapter_v2", "com_github_gin_gonic_gin", "com_github_nats_io_nats_go", "in_gopkg_yaml_v3")
 
 bazel_dep(name = "tar.bzl", version = "0.3.0")
 bazel_dep(name = "aspect_bazel_lib", version = "2.19.4")
@@ -22,8 +22,8 @@ bazel_dep(name = "rules_oci", version = "2.2.6")
 git_override(
     module_name = "rules_oci",
     commit = "ac44bb6e1f577ca0d3529646de850e9dea200a2d",
-    remote = "https://github.com/bazel-contrib/rules_oci.git"
-    )
+    remote = "https://github.com/bazel-contrib/rules_oci.git",
+)
 # For testing, we also recommend https://registry.bazel.build/modules/container_structure_test
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
@@ -37,8 +37,10 @@ oci.pull(
     # tag = "latest",
     digest = "sha256:201ef9125ff3f55fda8e0697eff0b3ce9078366503ef066653635a3ac3ed9c26",
     image = "gcr.io/distroless/base",
-    platforms = ["linux/amd64",
-        "linux/arm64"],
+    platforms = [
+        "linux/amd64",
+        "linux/arm64",
+    ],
 )
 
 # For each oci.pull call, repeat the "name" here to expose them as dependencies.

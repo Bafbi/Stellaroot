@@ -1,0 +1,8 @@
+version: 1
+enums: []
+constants:
+  - name: PLAYER_NAME
+    group: annotations
+    wire: player/name
+    value_kind: string
+    description: Player display name annotation

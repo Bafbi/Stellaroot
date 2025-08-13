@@ -1,0 +1,24 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+genrule(
+    name = "generate_constants",
+    srcs = ["constants.yaml"],
+    tools = ["//tools/genconstants:genconstants"],
+    outs = ["constants_gen.go"],
+    cmd = "$(location //tools/genconstants:genconstants) -in $(location constants.yaml) -out $@",
+)
+
+go_library(
+    name = "constant",
+    srcs = [
+        "constants_gen.go",
+    ],
+    importpath = "github.com/bafbi/stellaroot/libs/constant",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "constant_test",
+    srcs = ["constants_test.go"],
+    embed = ["constant"],
+)
