@@ -1,6 +1,7 @@
 vars:
   - file: configs/common.yaml
   - file: configs/{{ target.name }}.yaml 
+  - file: images/{{ target.name }}.yaml 
 
 
 deployments:
@@ -9,3 +10,4 @@ deployments:
   - barrier: true
   - include: nats
   - barrier: true
+  - include: services

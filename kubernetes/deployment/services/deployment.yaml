@@ -1,0 +1,7 @@
+deployments:
+  - path: namespace
+  - barrier: true
+  - path: fakedata
+  - path: dashboard
+
+overrideNamespace: {{ services.dashboard.namespace }}

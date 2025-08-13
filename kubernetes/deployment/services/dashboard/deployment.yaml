@@ -15,5 +15,21 @@ spec:
       containers:
         - name: dashboard
           image: "{{ images.get_image('stellaroot/dashboard') }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PORT
+              value: "8080"
+            - name: NATS_URL
+              value: "nats://nats.nats.svc:4222"
+            - name: NATS_USER
+              value: ""
+            - name: NATS_PASSWORD
+              value: ""
+            - name: NATS_TOKEN
+              value: ""
+            - name: PLAYERS_BUCKET
+              value: "players"
+            - name: SERVERS_BUCKET
+              value: "servers"
           ports:
             - containerPort: 8080
