@@ -1,12 +1,53 @@
 load("@rules_go//go:def.bzl", "go_library")
 
-go_library(
-    name = "templates",
-    srcs = [
+# go_library(
+#     name = "templates",
+#     srcs = [
+#         "base_templ.go",
+#         "index_templ.go",
+#         "players_templ.go",
+#         "servers_templ.go",
+#     ],
+#     importpath = "github.com/bafbi/stellaroot/services/dashboard/templates",
+#     visibility = ["//visibility:public"],
+#     deps = [
+#         "@com_github_a_h_templ//:templ",
+#         "@com_github_a_h_templ//runtime",
+#     ],
+# )
+
+
+# Step A: Generate .go files from .templ files
+# This rule runs the 'templ generate' command.
+genrule(
+    name = "templ_generated_files",
+    # Inputs: .templ sources only; avoid non-templ inputs so we can loop cleanly.
+    srcs = glob(["*.templ"]),
+    # Outputs: explicitly list generated files.
+    outs = [
         "base_templ.go",
         "index_templ.go",
         "players_templ.go",
         "servers_templ.go",
+    ],
+    # Generate each file with -f and -stdout so results are written under $(@D).
+        cmd = """
+set -euo pipefail
+for src in $(SRCS); do
+            bn="$${src##*/}"
+            out="$(@D)/$${bn%.templ}_templ.go"
+                $(location @com_github_a_h_templ//cmd/templ) generate -include-version=false -f "$$src" -stdout > "$$out"
+done
+""",
+    tools = ["@com_github_a_h_templ//cmd/templ"],
+)
+
+# Step B: Create a go_library from the generated files
+go_library(
+    name = "templates",
+    srcs = [
+        ":templ_generated_files",
+        "viewmodels.go",
     ],
     importpath = "github.com/bafbi/stellaroot/services/dashboard/templates",
     visibility = ["//visibility:public"],
