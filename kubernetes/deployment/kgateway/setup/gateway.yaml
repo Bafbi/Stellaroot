@@ -1,12 +1,14 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: my-http-gateway
-  namespace: kgateway-system
-  labels:
-    example: httpbin-mydomain
+  name: services-gateway
 spec:
   gatewayClassName: kgateway
+  # infrastructure:
+  #   parametersRef:
+  #     group: gateway.kgateway.dev
+  #     kind: GatewayParameters
+  #     name: nodeport-gw-params
   listeners:
   - protocol: HTTP
     port: 80

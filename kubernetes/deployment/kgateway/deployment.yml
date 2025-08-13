@@ -1,6 +1,5 @@
 deployments:
   - path: namespace
-    waitReadiness: true
   - path: crds
   - barrier: true
   - path: chart

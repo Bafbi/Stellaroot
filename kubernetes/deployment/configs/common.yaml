@@ -9,7 +9,7 @@ cert_manager:
       server: https://acme-v02.api.letsencrypt.org/directory
 
 kgateway:
-  namespace: gateway-system
+  namespace: kgateway-system
 
 nats:
   namespace: nats

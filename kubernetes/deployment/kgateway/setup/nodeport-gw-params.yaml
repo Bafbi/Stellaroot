@@ -1,0 +1,23 @@
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: GatewayParameters
+metadata:
+  name: nodeport-gw-params
+  namespace: kgateway-system
+spec:
+  kube:
+    service:
+      type: NodePort
+      ports:
+        - port: 80
+          nodePort: 30080
+        - port: 443
+          nodePort: 30443
+        - port: 25565
+          nodePort: 35565
+    podTemplate:
+      tolerations:
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
+      nodeSelector:
+        kubernetes.io/hostname: "stellaroot-local-control-plane"
