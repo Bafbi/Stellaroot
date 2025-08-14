@@ -50,12 +50,12 @@ func TestMetadataBasicLabelAnnotationOps(t *testing.T) {
 		t.Fatalf("expected label removed")
 	}
 
-	m.SetAnnotation("a", "b")
-	if v, ok := m.GetAnnotation("a"); !ok || v != "b" {
+	m.SetAnnotation(constant.AnnotationKey("a"), "b")
+	if v, ok := m.GetAnnotation(constant.AnnotationKey("a")); !ok || v != "b" {
 		t.Fatalf("expected annotation a=b, got %q (ok=%v)", v, ok)
 	}
-	m.DeleteAnnotation("a")
-	if _, ok := m.GetAnnotation("a"); ok {
+	m.DeleteAnnotation(constant.AnnotationKey("a"))
+	if _, ok := m.GetAnnotation(constant.AnnotationKey("a")); ok {
 		t.Fatalf("expected annotation removed")
 	}
 }
@@ -63,10 +63,10 @@ func TestMetadataBasicLabelAnnotationOps(t *testing.T) {
 func TestMetadataStructuredHelpers(t *testing.T) {
 	m := &Metadata{}
 	list := []string{"one", "two"}
-	if err := m.SetStringListAnnotation("list", list); err != nil {
+	if err := m.SetStringListAnnotation(constant.AnnotationKey("list"), list); err != nil {
 		t.Fatalf("SetStringListAnnotation failed: %v", err)
 	}
-	got, found, err := m.GetStringListAnnotation("list")
+	got, found, err := m.GetStringListAnnotation(constant.AnnotationKey("list"))
 	if err != nil || !found || len(got) != 2 || got[1] != "two" {
 		t.Fatalf("unexpected list result: %v found=%v got=%v", err, found, got)
 	}
@@ -76,23 +76,23 @@ func TestMetadataStructuredHelpers(t *testing.T) {
 		B string
 	}
 	val := sample{A: 7, B: "x"}
-	if err := m.SetStructuredAnnotation("obj", val); err != nil {
+	if err := m.SetStructuredAnnotation(constant.AnnotationKey("obj"), val); err != nil {
 		t.Fatalf("SetStructuredAnnotation failed: %v", err)
 	}
 	var out sample
-	found, err = m.GetStructuredAnnotation("obj", &out)
+	found, err = m.GetStructuredAnnotation(constant.AnnotationKey("obj"), &out)
 	if err != nil || !found || out.A != 7 || out.B != "x" {
 		t.Fatalf("unexpected structured result: %v found=%v out=%+v", err, found, out)
 	}
 
-	m.SetBoolAnnotation("flag", true)
-	b, found, err := m.GetBoolAnnotation("flag")
+	m.SetBoolAnnotation(constant.AnnotationKey("flag"), true)
+	b, found, err := m.GetBoolAnnotation(constant.AnnotationKey("flag"))
 	if err != nil || !found || !b {
 		t.Fatalf("expected bool true got b=%v found=%v err=%v", b, found, err)
 	}
 	// Invalid bool
-	m.SetAnnotation("flag2", "not-bool")
-	if _, _, err := m.GetBoolAnnotation("flag2"); err == nil {
+	m.SetAnnotation(constant.AnnotationKey("flag2"), "not-bool")
+	if _, _, err := m.GetBoolAnnotation(constant.AnnotationKey("flag2")); err == nil {
 		t.Fatalf("expected error for invalid bool annotation")
 	}
 }
@@ -116,7 +116,7 @@ func TestClientPlayerServerFlow(t *testing.T) {
 	uuid := "player-123"
 	if err := client.UpdatePlayer(uuid, func(m *Metadata) {
 		m.SetLabel("tier", "gold")
-		m.SetAnnotation(string(constant.PlayerName), "Hero")
+		m.SetAnnotation(constant.PlayerUsername, "Hero")
 	}); err != nil {
 		t.Fatalf("UpdatePlayer failed: %v", err)
 	}

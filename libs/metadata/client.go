@@ -113,7 +113,7 @@ func NewClient(parentCtx context.Context, config *Config, logger *slog.Logger) (
 		client.playersMu.Lock()
 		client.playersCache[uuid] = &player
 		if player.Annotations != nil {
-			if name, ok := player.Annotations[string(constant.PlayerName)]; ok && name != "" {
+			if name, ok := player.Annotations[string(constant.PlayerUsername)]; ok && name != "" {
 				client.playersNameToUUID[name] = uuid
 			}
 		}
@@ -268,7 +268,7 @@ func (c *Client) watchPlayers() {
 					var oldName string
 					c.playersMu.RLock()
 					if oldPlayer, exists := c.playersCache[uuid]; exists && oldPlayer.Annotations != nil {
-						oldName, _ = oldPlayer.Annotations[string(constant.PlayerName)]
+						oldName, _ = oldPlayer.Annotations[string(constant.PlayerUsername)]
 						oldValue = oldPlayer
 					}
 					c.playersMu.RUnlock()
@@ -301,12 +301,12 @@ func (c *Client) watchPlayers() {
 				var oldName, newName string
 				c.playersMu.RLock()
 				if oldPlayer, exists := c.playersCache[uuid]; exists && oldPlayer.Annotations != nil {
-					oldName, _ = oldPlayer.Annotations[string(constant.PlayerName)]
+					oldName, _ = oldPlayer.Annotations[string(constant.PlayerUsername)]
 					oldValue = oldPlayer
 				}
 				c.playersMu.RUnlock()
 				if player.Annotations != nil {
-					newName, _ = player.Annotations[string(constant.PlayerName)]
+					newName, _ = player.Annotations[string(constant.PlayerUsername)]
 				}
 
 				c.playersMu.Lock()

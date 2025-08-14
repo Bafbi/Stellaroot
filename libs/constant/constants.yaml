@@ -1,8 +1,13 @@
 version: 1
 enums: []
 constants:
-  - name: PLAYER_NAME
+  - name: PLAYER_USERNAME
     group: annotations
-    wire: player/name
+    wire: player/username
     value_kind: string
-    description: Player display name annotation
+    description: Player username annotation
+  - name: PLAYER_ONLINE
+    group: annotations
+    wire: player/online
+    value_kind: boolean
+    description: Player online status annotation

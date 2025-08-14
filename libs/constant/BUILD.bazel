@@ -1,17 +1,32 @@
 load("@rules_go//go:def.bzl", "go_library", "go_test")
 
+exports_files(
+    ["constants.yaml"],
+    visibility = ["//visibility:public"],
+)
+
 genrule(
     name = "generate_constants",
     srcs = ["constants.yaml"],
-    tools = ["//tools/genconstants:genconstants"],
     outs = ["constants_gen.go"],
     cmd = "$(location //tools/genconstants:genconstants) -in $(location constants.yaml) -out $@",
+    tools = ["//tools/genconstants"],
+)
+
+genrule(
+    name = "generate_annotation_descriptors",
+    srcs = ["constants.yaml"],
+    outs = ["descriptors_gen.go"],
+    cmd = "$(location //tools/genconstants:genconstants) -mode descriptors -in $(location constants.yaml) -out $@ -package constant",
+    tools = ["//tools/genconstants"],
 )
 
 go_library(
     name = "constant",
     srcs = [
-        "constants_gen.go",
+        "descriptors.go",
+        ":generate_annotation_descriptors",
+        ":generate_constants",
     ],
     importpath = "github.com/bafbi/stellaroot/libs/constant",
     visibility = ["//visibility:public"],

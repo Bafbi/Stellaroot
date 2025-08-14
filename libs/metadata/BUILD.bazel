@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "client.go",
         "config.go",
+        "descriptors.go",
         # "main.go",
         "types.go",
     ],
@@ -20,6 +21,7 @@ go_library(
 go_test(
     name = "metadata_test",
     srcs = [
+        "descriptors_test.go",
         "metadata_test.go",
     ],
     embed = ["metadata"],
