@@ -4,6 +4,13 @@ go_library(
     name = "metadata",
     srcs = [
         "client.go",
+    "connection.go",
+    "cache.go",
+    "events.go",
+    "watchers.go",
+    "players.go",
+    "servers.go",
+    "queries.go",
         "config.go",
         "descriptors.go",
         # "main.go",

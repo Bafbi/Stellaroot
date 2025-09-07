@@ -1,3 +1,5 @@
+"""Stellaroot Bazel module configuration."""
+
 module(
     name = "stellaroot",
     version = "0.1.0",
